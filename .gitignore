@@ -51,3 +51,6 @@ htmlcov/
 
 # Logs
 *.log
+
+# Lambda deployment package (generated during build)
+backend/lambda_package/

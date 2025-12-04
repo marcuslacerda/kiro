@@ -2,3 +2,4 @@ fastapi==0.117.1
 pydantic==2.11.9
 boto3==1.40.40
 uvicorn==0.37.0
+mangum==0.19.0
