@@ -34,7 +34,9 @@ A serverless event management application built with FastAPI, AWS Lambda, API Ga
 }
 ```
 
-## API Endpoints
+## API Documentation
+
+📚 **[View Full API Documentation](backend/docs/index.html)** - Complete interactive API reference
 
 ### Base URL
 ```

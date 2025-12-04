@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Management API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        .section {
+            background: white;
+            padding: 30px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-right: 10px;
+        }
+        .get { background: #61affe; color: white; }
+        .post { background: #49cc90; color: white; }
+        .put { background: #fca130; color: white; }
+        .delete { background: #f93e3e; color: white; }
+        .path {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            color: #333;
+        }
+        .description {
+            margin: 15px 0;
+            color: #666;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        .param {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .param-name {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .model {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        .field {
+            margin: 8px 0;
+            padding-left: 15px;
+        }
+        .field-name {
+            font-weight: bold;
+            color: #764ba2;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e9ecef;
+            border-radius: 3px;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+        .required {
+            background: #f93e3e;
+            color: white;
+        }
+        .optional {
+            background: #6c757d;
+            color: white;
+        }
+        a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .toc ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+        .toc li {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Event Management API</h1>
+            <p class="subtitle">A serverless REST API for managing events using FastAPI, AWS Lambda, and DynamoDB</p>
+            <p style="margin-top: 15px;">Version 1.0.0</p>
+        </header>
+
+        <div class="section toc">
+            <h2>Table of Contents</h2>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#base-url">Base URL</a></li>
+                <li><a href="#models">Data Models</a></li>
+                <li><a href="#endpoints">API Endpoints</a>
+                    <ul>
+                        <li><a href="#get-root">GET / - Root</a></li>
+                        <li><a href="#list-events">GET /events - List Events</a></li>
+                        <li><a href="#create-event">POST /events - Create Event</a></li>
+                        <li><a href="#get-event">GET /events/{event_id} - Get Event</a></li>
+                        <li><a href="#update-event">PUT /events/{event_id} - Update Event</a></li>
+                        <li><a href="#delete-event">DELETE /events/{event_id} - Delete Event</a></li>
+                    </ul>
+                </li>
+                <li><a href="#error-handling">Error Handling</a></li>
+            </ul>
+        </div>
+
+        <div class="section" id="overview">
+            <h2>Overview</h2>
+            <p>The Event Management API provides a complete CRUD (Create, Read, Update, Delete) interface for managing events. Built with FastAPI and deployed on AWS Lambda, it offers:</p>
+            <ul style="margin: 15px 0; padding-left: 40px;">
+                <li>Full CRUD operations for events</li>
+                <li>Input validation with Pydantic</li>
+                <li>CORS support for web applications</li>
+                <li>Proper handling of DynamoDB reserved keywords</li>
+                <li>RESTful API design</li>
+                <li>Serverless architecture for scalability</li>
+            </ul>
+        </div>
+
+        <div class="section" id="base-url">
+            <h2>Base URL</h2>
+            <pre><code>https://iqsojot0q9.execute-api.us-west-2.amazonaws.com/prod/</code></pre>
+        </div>
+
+        <div class="section" id="models">
+            <h2>Data Models</h2>
+            
+            <h3>EventBase</h3>
+            <p class="description">Base model for event data with common fields.</p>
+            <div class="model">
+                <div class="field">
+                    <span class="field-name">title</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Event title (1-200 characters)</p>
+                </div>
+                <div class="field">
+                    <span class="field-name">description</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Event description (1-1000 characters)</p>
+                </div>
+                <div class="field">
+                    <span class="field-name">date</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Event date in YYYY-MM-DD format</p>
+                </div>
+                <div class="field">
+                    <span class="field-name">location</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Event location (1-200 characters)</p>
+                </div>
+                <div class="field">
+                    <span class="field-name">capacity</span>: <code>integer</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Maximum number of attendees (must be positive)</p>
+                </div>
+                <div class="field">
+                    <span class="field-name">organizer</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Event organizer name (1-200 characters)</p>
+                </div>
+                <div class="field">
+                    <span class="field-name">status</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Event status: <code>active</code>, <code>cancelled</code>, or <code>completed</code></p>
+                </div>
+            </div>
+
+            <h3>EventCreate</h3>
+            <p class="description">Model for creating a new event. Extends EventBase with a unique event identifier.</p>
+            <div class="model">
+                <div class="field">
+                    <span class="field-name">eventId</span>: <code>string</code> <span class="badge required">required</span>
+                    <p style="margin-left: 15px; color: #666;">Unique identifier for the event (1-100 characters)</p>
+                </div>
+                <div class="field">
+                    <em>+ all fields from EventBase</em>
+                </div>
+            </div>
+
+            <h3>EventUpdate</h3>
+            <p class="description">Model for updating an existing event. All fields are optional, allowing partial updates.</p>
+            <div class="model">
+                <div class="field">
+                    <em>All fields from EventBase are optional</em>
+                </div>
+            </div>
+
+            <h3>EventResponse</h3>
+            <p class="description">Model for event API responses. Includes all event data with the event ID.</p>
+            <div class="model">
+                <div class="field">
+                    <span class="field-name">eventId</span>: <code>string</code>
+                </div>
+                <div class="field">
+                    <em>+ all fields from EventBase</em>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="endpoints">
+            <h2>API Endpoints</h2>
+
+            <div class="endpoint" id="get-root">
+                <div>
+                    <span class="method get">GET</span>
+                    <span class="path">/</span>
+                </div>
+                <p class="description">Root endpoint providing API information.</p>
+                <h4>Response</h4>
+                <pre><code>{
+  "message": "Event Management API",
+  "version": "1.0"
+}</code></pre>
+            </div>
+
+            <div class="endpoint" id="list-events">
+                <div>
+                    <span class="method get">GET</span>
+                    <span class="path">/events</span>
+                </div>
+                <p class="description">List all events, optionally filtered by status.</p>
+                
+                <h4>Query Parameters</h4>
+                <div class="param">
+                    <span class="param-name">status</span> <span class="badge optional">optional</span>
+                    <p>Filter by event status: <code>active</code>, <code>cancelled</code>, or <code>completed</code></p>
+                </div>
+
+                <h4>Response</h4>
+                <p>Returns an array of EventResponse objects.</p>
+                <pre><code>[
+  {
+    "eventId": "event-123",
+    "title": "Tech Conference 2024",
+    "description": "Annual technology conference",
+    "date": "2024-12-15",
+    "location": "San Francisco",
+    "capacity": 500,
+    "organizer": "Tech Corp",
+    "status": "active"
+  }
+]</code></pre>
+
+                <h4>Example Requests</h4>
+                <pre><code>GET /events
+GET /events?status=active</code></pre>
+            </div>
+
+            <div class="endpoint" id="create-event">
+                <div>
+                    <span class="method post">POST</span>
+                    <span class="path">/events</span>
+                </div>
+                <p class="description">Create a new event.</p>
+                
+                <h4>Request Body</h4>
+                <p>EventCreate model (JSON)</p>
+                <pre><code>{
+  "eventId": "event-123",
+  "title": "Tech Conference 2024",
+  "description": "Annual technology conference",
+  "date": "2024-12-15",
+  "location": "San Francisco",
+  "capacity": 500,
+  "organizer": "Tech Corp",
+  "status": "active"
+}</code></pre>
+
+                <h4>Response</h4>
+                <p><strong>Status Code:</strong> 201 Created</p>
+                <p>Returns the created EventResponse object.</p>
+
+                <h4>Errors</h4>
+                <ul style="margin-left: 40px;">
+                    <li><strong>409 Conflict:</strong> Event with same ID already exists</li>
+                    <li><strong>422 Unprocessable Entity:</strong> Validation error</li>
+                    <li><strong>500 Internal Server Error:</strong> Database error</li>
+                </ul>
+            </div>
+
+            <div class="endpoint" id="get-event">
+                <div>
+                    <span class="method get">GET</span>
+                    <span class="path">/events/{event_id}</span>
+                </div>
+                <p class="description">Get a specific event by ID.</p>
+                
+                <h4>Path Parameters</h4>
+                <div class="param">
+                    <span class="param-name">event_id</span> <span class="badge required">required</span>
+                    <p>Unique identifier of the event</p>
+                </div>
+
+                <h4>Response</h4>
+                <p>Returns an EventResponse object.</p>
+
+                <h4>Errors</h4>
+                <ul style="margin-left: 40px;">
+                    <li><strong>404 Not Found:</strong> Event not found</li>
+                    <li><strong>500 Internal Server Error:</strong> Database error</li>
+                </ul>
+
+                <h4>Example Request</h4>
+                <pre><code>GET /events/event-123</code></pre>
+            </div>
+
+            <div class="endpoint" id="update-event">
+                <div>
+                    <span class="method put">PUT</span>
+                    <span class="path">/events/{event_id}</span>
+                </div>
+                <p class="description">Update an existing event. Supports partial updates - only provided fields will be updated. Properly handles DynamoDB reserved keywords using expression attribute names.</p>
+                
+                <h4>Path Parameters</h4>
+                <div class="param">
+                    <span class="param-name">event_id</span> <span class="badge required">required</span>
+                    <p>Unique identifier of the event to update</p>
+                </div>
+
+                <h4>Request Body</h4>
+                <p>EventUpdate model (JSON) - all fields optional</p>
+                <pre><code>{
+  "title": "Updated Tech Conference 2024",
+  "capacity": 600
+}</code></pre>
+
+                <h4>Response</h4>
+                <p>Returns the updated EventResponse object with all fields.</p>
+
+                <h4>Errors</h4>
+                <ul style="margin-left: 40px;">
+                    <li><strong>400 Bad Request:</strong> No fields provided for update</li>
+                    <li><strong>404 Not Found:</strong> Event not found</li>
+                    <li><strong>422 Unprocessable Entity:</strong> Validation error</li>
+                    <li><strong>500 Internal Server Error:</strong> Database error</li>
+                </ul>
+            </div>
+
+            <div class="endpoint" id="delete-event">
+                <div>
+                    <span class="method delete">DELETE</span>
+                    <span class="path">/events/{event_id}</span>
+                </div>
+                <p class="description">Delete an event.</p>
+                
+                <h4>Path Parameters</h4>
+                <div class="param">
+                    <span class="param-name">event_id</span> <span class="badge required">required</span>
+                    <p>Unique identifier of the event to delete</p>
+                </div>
+
+                <h4>Response</h4>
+                <p><strong>Status Code:</strong> 200 OK</p>
+                <pre><code>{
+  "message": "Event deleted successfully",
+  "eventId": "event-123"
+}</code></pre>
+
+                <h4>Errors</h4>
+                <ul style="margin-left: 40px;">
+                    <li><strong>404 Not Found:</strong> Event not found</li>
+                    <li><strong>500 Internal Server Error:</strong> Database error</li>
+                </ul>
+
+                <h4>Example Request</h4>
+                <pre><code>DELETE /events/event-123</code></pre>
+            </div>
+        </div>
+
+        <div class="section" id="error-handling">
+            <h2>Error Handling</h2>
+            <p>The API uses standard HTTP status codes and returns error details in JSON format:</p>
+            <pre><code>{
+  "detail": "Error message describing what went wrong"
+}</code></pre>
+
+            <h3>Common Status Codes</h3>
+            <ul style="margin: 15px 0; padding-left: 40px;">
+                <li><strong>200 OK:</strong> Successful GET, PUT, or DELETE request</li>
+                <li><strong>201 Created:</strong> Successful POST request</li>
+                <li><strong>400 Bad Request:</strong> Invalid request (e.g., no fields to update)</li>
+                <li><strong>404 Not Found:</strong> Resource not found</li>
+                <li><strong>409 Conflict:</strong> Resource already exists</li>
+                <li><strong>422 Unprocessable Entity:</strong> Validation error</li>
+                <li><strong>500 Internal Server Error:</strong> Server or database error</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>Technical Notes</h2>
+            <ul style="margin: 15px 0; padding-left: 40px;">
+                <li><strong>DynamoDB Reserved Keywords:</strong> The API properly handles reserved keywords like <code>status</code>, <code>capacity</code>, <code>location</code>, and <code>date</code> using boto3's <code>Attr</code> for filtering and expression attribute names for updates.</li>
+                <li><strong>CORS:</strong> Configured to allow all origins for development. Restrict in production.</li>
+                <li><strong>Validation:</strong> Pydantic v2 with <code>pattern</code> parameter for regex validation.</li>
+                <li><strong>Lambda Handler:</strong> Uses Mangum to adapt FastAPI for AWS Lambda.</li>
+            </ul>
+        </div>
+
+        <footer style="text-align: center; padding: 40px 0; color: #666;">
+            <p>Event Management API v1.0.0</p>
+            <p style="margin-top: 10px;">Built with FastAPI, AWS Lambda, API Gateway, and DynamoDB</p>
+        </footer>
+    </div>
+</body>
+</html>
