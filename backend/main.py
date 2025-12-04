@@ -1,3 +1,28 @@
+Create or update a project README with basic project information, setup instructions, and usage examples. Generate simple API documentation for the backend using pdoc (check the documentation/context7 for up-to-date information about pdoc, notably the right command to generate documentation). Place the generated HTML documentation in a docs/ folder in the backend folder.
+"""
+Event Management API
+
+A serverless REST API for managing events using FastAPI, AWS Lambda, and DynamoDB.
+
+This module provides a complete CRUD (Create, Read, Update, Delete) interface for
+event management with proper validation, error handling, and DynamoDB reserved
+keyword handling.
+
+Features:
+    - Full CRUD operations for events
+    - Input validation with Pydantic
+    - CORS support for web applications
+    - Proper handling of DynamoDB reserved keywords
+    - AWS Lambda integration via Mangum
+
+Example:
+    Deploy this API using AWS CDK and access it via API Gateway:
+    
+    ```bash
+    curl -X GET "https://your-api-url/events"
+    ```
+"""
+
 import os
 from typing import Optional
 from fastapi import FastAPI, HTTPException, Query
@@ -8,7 +33,11 @@ import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
-app = FastAPI(title="Event Management API")
+app = FastAPI(
+    title="Event Management API",
+    description="A serverless API for managing events with DynamoDB backend",
+    version="1.0.0"
+)
 
 # CORS configuration
 app.add_middleware(
@@ -27,6 +56,18 @@ table = dynamodb.Table(table_name)
 
 # Pydantic models
 class EventBase(BaseModel):
+    """
+    Base model for event data with common fields.
+    
+    Attributes:
+        title: Event title (1-200 characters)
+        description: Event description (1-1000 characters)
+        date: Event date in YYYY-MM-DD format
+        location: Event location (1-200 characters)
+        capacity: Maximum number of attendees (must be positive)
+        organizer: Event organizer name (1-200 characters)
+        status: Event status (active, cancelled, or completed)
+    """
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1, max_length=1000)
     date: str = Field(..., pattern=r'^\d{4}-\d{2}-\d{2}$')
@@ -37,10 +78,32 @@ class EventBase(BaseModel):
 
 
 class EventCreate(EventBase):
+    """
+    Model for creating a new event.
+    
+    Extends EventBase with a unique event identifier.
+    
+    Attributes:
+        eventId: Unique identifier for the event (1-100 characters)
+    """
     eventId: str = Field(..., min_length=1, max_length=100)
 
 
 class EventUpdate(BaseModel):
+    """
+    Model for updating an existing event.
+    
+    All fields are optional, allowing partial updates.
+    
+    Attributes:
+        title: Optional updated event title
+        description: Optional updated event description
+        date: Optional updated event date
+        location: Optional updated event location
+        capacity: Optional updated capacity
+        organizer: Optional updated organizer name
+        status: Optional updated event status
+    """
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = Field(None, min_length=1, max_length=1000)
     date: Optional[str] = Field(None, pattern=r'^\d{4}-\d{2}-\d{2}$')
@@ -51,17 +114,48 @@ class EventUpdate(BaseModel):
 
 
 class EventResponse(EventBase):
+    """
+    Model for event API responses.
+    
+    Includes all event data with the event ID.
+    
+    Attributes:
+        eventId: Unique identifier for the event
+    """
     eventId: str
 
 
 @app.get("/")
 async def root():
+    """
+    Root endpoint providing API information.
+    
+    Returns:
+        dict: API name and version information
+    """
     return {"message": "Event Management API", "version": "1.0"}
 
 
 @app.get("/events", response_model=list[EventResponse])
 async def list_events(status: Optional[str] = Query(None, pattern=r'^(active|cancelled|completed)$')):
-    """List all events, optionally filtered by status"""
+    """
+    List all events, optionally filtered by status.
+    
+    Args:
+        status: Optional filter by event status (active, cancelled, or completed)
+    
+    Returns:
+        list[EventResponse]: List of events matching the criteria
+    
+    Raises:
+        HTTPException: 500 if database error occurs
+    
+    Example:
+        ```
+        GET /events
+        GET /events?status=active
+        ```
+    """
     try:
         if status:
             # Use Attr for filtering - it handles reserved keywords automatically
@@ -78,7 +172,34 @@ async def list_events(status: Optional[str] = Query(None, pattern=r'^(active|can
 
 @app.post("/events", response_model=EventResponse, status_code=201)
 async def create_event(event: EventCreate):
-    """Create a new event"""
+    """
+    Create a new event.
+    
+    Args:
+        event: Event data including unique eventId
+    
+    Returns:
+        EventResponse: The created event
+    
+    Raises:
+        HTTPException: 409 if event with same ID already exists
+        HTTPException: 500 if database error occurs
+    
+    Example:
+        ```json
+        POST /events
+        {
+            "eventId": "event-123",
+            "title": "Tech Conference",
+            "description": "Annual tech event",
+            "date": "2024-12-15",
+            "location": "San Francisco",
+            "capacity": 500,
+            "organizer": "Tech Corp",
+            "status": "active"
+        }
+        ```
+    """
     try:
         # Check if event already exists
         response = table.get_item(Key={'eventId': event.eventId})
@@ -96,7 +217,24 @@ async def create_event(event: EventCreate):
 
 @app.get("/events/{event_id}", response_model=EventResponse)
 async def get_event(event_id: str):
-    """Get a specific event by ID"""
+    """
+    Get a specific event by ID.
+    
+    Args:
+        event_id: Unique identifier of the event
+    
+    Returns:
+        EventResponse: The requested event
+    
+    Raises:
+        HTTPException: 404 if event not found
+        HTTPException: 500 if database error occurs
+    
+    Example:
+        ```
+        GET /events/event-123
+        ```
+    """
     try:
         response = table.get_item(Key={'eventId': event_id})
         
@@ -110,7 +248,33 @@ async def get_event(event_id: str):
 
 @app.put("/events/{event_id}", response_model=EventResponse)
 async def update_event(event_id: str, event_update: EventUpdate):
-    """Update an existing event"""
+    """
+    Update an existing event.
+    
+    Supports partial updates - only provided fields will be updated.
+    Properly handles DynamoDB reserved keywords using expression attribute names.
+    
+    Args:
+        event_id: Unique identifier of the event to update
+        event_update: Fields to update (all optional)
+    
+    Returns:
+        EventResponse: The updated event with all fields
+    
+    Raises:
+        HTTPException: 404 if event not found
+        HTTPException: 400 if no fields provided for update
+        HTTPException: 500 if database error occurs
+    
+    Example:
+        ```json
+        PUT /events/event-123
+        {
+            "title": "Updated Title",
+            "capacity": 600
+        }
+        ```
+    """
     try:
         # Check if event exists
         response = table.get_item(Key={'eventId': event_id})
@@ -161,7 +325,24 @@ async def update_event(event_id: str, event_update: EventUpdate):
 
 @app.delete("/events/{event_id}", status_code=200)
 async def delete_event(event_id: str):
-    """Delete an event"""
+    """
+    Delete an event.
+    
+    Args:
+        event_id: Unique identifier of the event to delete
+    
+    Returns:
+        dict: Confirmation message with deleted event ID
+    
+    Raises:
+        HTTPException: 404 if event not found
+        HTTPException: 500 if database error occurs
+    
+    Example:
+        ```
+        DELETE /events/event-123
+        ```
+    """
     try:
         # Check if event exists
         response = table.get_item(Key={'eventId': event_id})
